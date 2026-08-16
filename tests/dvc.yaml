@@ -1,0 +1,16 @@
+stages:
+
+  train:
+    cmd: python src/train.py
+
+    deps:
+      - src/train.py
+      - data/raw/iris.csv
+
+    params:
+      - random_state
+      - test_size
+      - model.n_estimators
+      - model.max_depth
+      - model.min_samples_leaf
+      - evaluation.min_accuracy

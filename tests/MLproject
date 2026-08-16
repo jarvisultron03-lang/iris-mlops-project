@@ -1,0 +1,5 @@
+name: iris-mlops
+
+entry_points:
+  main:
+    command: "uv run python src/train.py"
