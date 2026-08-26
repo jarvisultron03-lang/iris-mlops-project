@@ -1,0 +1,53 @@
+name: Iris_MLOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-train:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      # 3. Install uv
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      # 4. Install Project Dependencies
+      - name: Install Dependencies
+        run: |
+          uv sync
+
+     
+      # 5. Execute DVC Pipeline (Model Training & MLflow Logging)
+      - name: Run DVC Pipeline
+        run: |
+          uv run dvc repro
+
+      # 6. Run Unit & Integration Tests
+      - name: Run API Tests with Pytest
+        run: |
+          uv run pytest
+
+      # 7. Upload MLflow Database Artifact (Optional)
+      - name: Upload MLflow Tracking Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-sqlite-db
+          path: mlflow.db
+          retention-days: 7
