@@ -42,7 +42,7 @@ jobs:
       # 6. Run Unit & Integration Tests
       - name: Run API Tests with Pytest
         run: |
-          uv run pytest
+          uv run python -m pytest tests -v
 
       # 7. Upload MLflow Database Artifact (Optional)
       - name: Upload MLflow Tracking Artifact
