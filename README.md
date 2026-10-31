@@ -1,109 +1,104 @@
 # Iris MLOps Project
 
-A learning project demonstrating a production-style machine learning workflow using:
+An end-to-end Iris classification project that trains a Random Forest model, tracks experiments and registers approved models with MLflow, and serves predictions through a FastAPI application.
 
-- Python
-- Scikit-Learn
-- DVC
-- MLflow
-- MLflow Model Registry
-- FastAPI
-- Pytest
-- Git
+## What it does
 
-## Architecture
+- Loads the Iris dataset and writes it to `data/raw/iris.csv`.
+- Uses DVC to run the training pipeline and track its inputs and parameters.
+- Logs training parameters and accuracy to MLflow.
+- Registers each trained model as `IrisClassifier`. A model that meets the configured accuracy threshold is assigned the `champion` alias.
+- Serves predictions from the champion model through a REST API.
+- Runs API integration tests with pytest.
 
-Git
-    |
-    +-- Code
-    |
-    +-- DVC metadata
-           |
-           v
-      Iris dataset
-           |
-           v
-        train.py
-           |
-           v
-        MLflow
-           |
-           +-- Parameters
-           +-- Metrics
-           +-- Experiment
-           +-- Registered Model
-                    |
-                    v
-             IrisClassifier
-                    |
-                 champion
-                    |
-                    v
-                 FastAPI
-                    |
-                 /predict
+## Requirements
+
+- Python 3.13
+- [uv](https://docs.astral.sh/uv/)
 
 ## Setup
 
-Create a virtual environment:
+From the project root, install the project and development dependencies:
 
-python -m venv .venv
+```shell
+uv sync
+```
 
-Activate it on Windows:
+The Iris CSV is DVC-managed and may not be present after a fresh clone. Generate it locally with the included preparation script:
 
-.venv\Scripts\activate
+```shell
+uv run python src/prepare_data.py
+```
 
-Install dependencies:
+This writes `data/raw/iris.csv` using scikit-learn's built-in Iris dataset.
 
-pip install -r requirements.txt
+## Train the model
 
-## Create the dataset
+Run the DVC training pipeline:
 
-python src/prepare_data.py
+```shell
+uv run dvc repro
+```
 
-## Add dataset to DVC
+The pipeline runs `src/train.py`. It reads `params.yaml`, splits the data into training and validation sets, trains a `RandomForestClassifier`, and logs its parameters, validation accuracy, and model to MLflow. The default experiment is `iris-classification`; the tracking database is `mlflow.db`, and model artifacts are stored under `mlruns/`.
 
-dvc add data/raw/iris.csv
+The model is registered as `IrisClassifier`. When its validation accuracy is at least `evaluation.min_accuracy`, training assigns the new model version the `champion` alias and marks it as approved. The API requires a registered model with this alias, so a successful training run must happen before starting the API or running its tests.
 
-## Run training
+## Run the API
 
-python src/train.py
+Start the service from the project root:
 
-The training script:
+```shell
+uv run uvicorn app.main:app --reload
+```
 
-1. Loads the DVC-controlled dataset.
-2. Splits the data.
-3. Trains a Random Forest.
-4. Logs parameters to MLflow.
-5. Logs metrics to MLflow.
-6. Logs the model to MLflow.
-7. Registers the model as IrisClassifier.
-8. Assigns the champion alias if accuracy passes the threshold.
+The API loads `models:/IrisClassifier@champion` during startup and uses the local MLflow tracking database. Visit `http://127.0.0.1:8000/docs` for the interactive Swagger UI.
 
-## Start MLflow UI
+### Endpoints
 
-mlflow ui --backend-store-uri sqlite:///mlflow.db
+- `GET /` — health status and model-loading information.
+- `POST /predict` — classify a flower from its four measurements in centimeters. Each value must be between 0 and 10.
 
-Then open:
+Example request:
 
-http://127.0.0.1:5000
+```json
+{
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2
+}
+```
 
-## Start FastAPI
-
-uvicorn app.main:app --reload
-
-Then open:
-
-http://127.0.0.1:8000/docs
+The prediction response includes the integer `class_id`, the `species` (`setosa`, `versicolor`, or `virginica`), and the probabilities for all three classes.
 
 ## Run tests
 
-pytest
+After setup, data preparation, and a successful training run:
 
-## Run through MLflow Projects
+```shell
+uv run python -m pytest tests -v
+```
 
-mlflow run . -e train
+The tests exercise the health endpoint, a valid prediction, and validation of out-of-range input.
 
-## Run through DVC
+## Configuration
 
-dvc repro
+Edit `params.yaml` to change the random seed, validation split, Random Forest settings, or minimum accuracy required for promotion to `champion`.
+
+## Project structure
+
+```text
+app/
+  main.py              FastAPI application and prediction endpoints
+data/raw/
+  iris.csv.dvc         DVC metadata for the Iris dataset
+src/
+  prepare_data.py      Generate the Iris CSV
+  train.py             Train, evaluate, and register the model
+tests/
+  test_api.py          API integration tests
+dvc.yaml               DVC training pipeline
+params.yaml             Training and promotion parameters
+MLproject               MLflow project entry point
+```
