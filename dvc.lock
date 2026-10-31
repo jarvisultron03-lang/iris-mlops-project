@@ -1,0 +1,21 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: uv run python src/train.py
+    deps:
+    - path: data/raw/iris.csv
+      hash: md5
+      md5: 10f5f61b137fa708403ea5c480386bfe
+      size: 2908
+    - path: src/train.py
+      hash: md5
+      md5: 97bd6031b2aca01769feee1303bd1791
+      size: 6495
+    params:
+      params.yaml:
+        evaluation.min_accuracy: 0.9
+        model.max_depth: 5
+        model.min_samples_leaf: 2
+        model.n_estimators: 100
+        random_state: 42
+        test_size: 0.2

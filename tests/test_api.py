@@ -1,23 +1,28 @@
+import pytest
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 
-client = TestClient(app)
+@pytest.fixture(scope="module")
+def client(): 
+    with TestClient( app, raise_server_exceptions=True) as client:
+        yield client
 
 
-def test_health_check():
+def test_health_check(client):
 
-    response = client.get("/")
+        response = client.get("/")
 
-    assert response.status_code == 200
+        assert response.status_code == 200
 
-    data = response.json()
+        data = response.json()
 
-    assert data["status"] == "ok"
+        assert data["status"] == "ok"
 
 
-def test_prediction():
+def test_prediction(client):
 
     payload = {
         "sepal_length": 5.1,
@@ -27,9 +32,9 @@ def test_prediction():
     }
 
     response = client.post(
-        "/predict",
-        json=payload,
-    )
+            "/predict",
+            json=payload,
+        )
 
     assert response.status_code == 200
 
@@ -40,15 +45,15 @@ def test_prediction():
     assert "probabilities" in data
 
     assert data["species"] in [
-        "setosa",
-        "versicolor",
-        "virginica",
-    ]
+            "setosa",
+            "versicolor",
+            "virginica",
+        ]
 
     assert len(data["probabilities"]) == 3
 
 
-def test_invalid_input():
+def test_invalid_input(client):
 
     payload = {
         "sepal_length": -1,
@@ -57,9 +62,10 @@ def test_invalid_input():
         "petal_width": 0.2,
     }
 
+
     response = client.post(
-        "/predict",
-        json=payload,
-    )
+            "/predict",
+            json=payload,
+        )
 
     assert response.status_code == 422

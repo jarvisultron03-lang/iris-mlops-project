@@ -1,7 +1,7 @@
 stages:
 
   train:
-    cmd: python src/train.py
+    cmd: uv run python src/train.py
 
     deps:
       - src/train.py

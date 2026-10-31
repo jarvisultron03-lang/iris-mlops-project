@@ -3,6 +3,7 @@ from typing import Dict, List
 
 import mlflow
 import mlflow.sklearn
+import pandas as pd
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -146,36 +147,65 @@ def predict_species(
     data: IrisFeatures,
 ):
 
+    print("\n===== /predict START =====")
+
+    print("Received data:", data)
+
     model = ml_models.get(
         "iris_classifier"
     )
 
+    print("Model:", model)
+
     if model is None:
+
+        print("ERROR: Model is None")
 
         raise HTTPException(
             status_code=500,
             detail="Model is not loaded.",
         )
 
-    input_data = [[
+    input_data = pd.DataFrame(
+    [[
         data.sepal_length,
         data.sepal_width,
         data.petal_length,
         data.petal_width,
-    ]]
+    ]],
+    columns=[
+        "sepal_length",
+        "sepal_width",
+        "petal_length",
+        "petal_width",
+    ],
+)
 
-    prediction_id = int(
-        model.predict(input_data)[0]
-    )
+    print("Input data:", input_data)
 
-    probabilities = (
-        model
-        .predict_proba(input_data)[0]
-        .tolist()
-    )
+    prediction = model.predict(input_data)
 
-    return PredictionResponse(
+    print("Raw prediction:", prediction)
+
+    prediction_id = int(prediction[0])
+
+    print("Prediction ID:", prediction_id)
+
+    probabilities = model.predict_proba(input_data)[0]
+
+    print("Probabilities:", probabilities)
+
+    species = TARGET_NAMES[prediction_id]
+
+    print("Species:", species)
+
+    result = PredictionResponse(
         class_id=prediction_id,
-        species=TARGET_NAMES[prediction_id],
-        probabilities=probabilities,
+        species=species,
+        probabilities=probabilities.tolist(),
     )
+
+    print("Response:", result)
+    print("===== /predict END =====\n")
+
+    return result

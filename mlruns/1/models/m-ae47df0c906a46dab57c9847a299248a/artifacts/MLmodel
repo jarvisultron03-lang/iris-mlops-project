@@ -1,0 +1,32 @@
+artifact_path: file:C:/Users/Oaj Shivank/iris-mlops-project/mlruns/1/models/m-ae47df0c906a46dab57c9847a299248a/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.13.9
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.0
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.15.1
+model_id: m-ae47df0c906a46dab57c9847a299248a
+model_size_bytes: 1802878
+model_uuid: m-ae47df0c906a46dab57c9847a299248a
+prompts: null
+run_id: b9e67ab78f6e4d8580ec31f3289b99e5
+signature:
+  inputs: '[{"type": "double", "name": "sepal_length", "required": true}, {"type":
+    "double", "name": "sepal_width", "required": true}, {"type": "double", "name":
+    "petal_length", "required": true}, {"type": "double", "name": "petal_width", "required":
+    true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-08-26 15:15:33.510813'
